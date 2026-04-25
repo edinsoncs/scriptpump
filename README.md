@@ -2,6 +2,8 @@
 
 > **Created by:** [viainti](https://github.com/viainthi) & [edinsoncs](https://github.com/edinsoncs)
 
+![ScriptPump.fun Banner](https://i.ibb.co/CRFmXDQ/Chat-GPT-Image-25-abr-2026-02-42-47-p-m.png)
+
 Professional Solana token launchpad platform with dynamic bonding curves (Meteora DBC), rewards system, AI-powered whitepaper generator, social authentication, complete admin dashboard, and integrated social feed.
 
 ---
@@ -50,7 +52,7 @@ ScriptPump.fun is a **pump.fun-style token launchpad** operating on the **Solana
 - Partner fees accumulate and can be claimed from the admin dashboard
 - Host wallet configurable via `METEORA_HOST_SECRET_BASE64` and `METEORA_HOST_RECEIVER`
 
-### 5. Vanity Token Address (Premium)
+### 5. Viainti Token Address (Premium)
 - Generation of token addresses with custom suffix (e.g., `...tkl`)
 - Configurable via `TOKEN_ADDRESS_SUFFIX` and `TOKEN_ADDRESS_MAX_ATTEMPTS`
 - Premium functionality for projects wanting branding on their contract address
@@ -97,7 +99,7 @@ Host claims rewards periodically → Recurring revenue
 - **Service management**: Firebase/Supabase/MongoDB, email, RPC
 
 ### Technical
-- **Vanity addresses**: Generation of contract addresses with custom suffix
+- **Viainti addresses**: Generation of contract addresses with custom suffix
 - **Email verification**: Mandatory verification for email/password auth
 - **Social auth**: Twitter, Google, Telegram
 - **i18n**: Multi-language support (EN, ES, PT, FR, DE, ZH, JA, KO)
@@ -378,7 +380,7 @@ METEORA_HOST_SECRET_BASE64="base64-secret-key-of-your-host-wallet"
 METEORA_HOST_RECEIVER="wallet-address-to-receive-rewards"
 HOST_DASHBOARD_SECRET="secret-to-protect-admin-dashboard"
 
-# Token Vanity Address
+# Token Viainti Address
 TOKEN_ADDRESS_SUFFIX="tkl"
 TOKEN_ADDRESS_MAX_ATTEMPTS="250000"
 TOKEN_ADDRESS_SUFFIX_REQUIRED="true"
@@ -552,9 +554,9 @@ Generates/updates the environment variable block in `.env.local` from the instal
 | `METEORA_HOST_SECRET_BASE64` | Yes | Host wallet base64 secret key |
 | `METEORA_HOST_RECEIVER` | No | Destination wallet for host rewards |
 | `HOST_DASHBOARD_SECRET` | Yes | Secret to protect admin dashboard |
-| `TOKEN_ADDRESS_SUFFIX` | No | Vanity suffix for token addresses |
-| `TOKEN_ADDRESS_MAX_ATTEMPTS` | No | Max attempts for vanity address (default: 250000) |
-| `TOKEN_ADDRESS_SUFFIX_REQUIRED` | No | If `true`, fails if vanity not found |
+| `TOKEN_ADDRESS_SUFFIX` | No | Viainti suffix for token addresses |
+| `TOKEN_ADDRESS_MAX_ATTEMPTS` | No | Max attempts for Viainti address (default: 250000) |
+| `TOKEN_ADDRESS_SUFFIX_REQUIRED` | No | If `true`, fails if Viainti not found |
 | `PINATA_JWT` | Yes | Pinata JWT for IPFS |
 | `PINATA_GATEWAY_BASE` | No | Custom IPFS gateway |
 | `OPENAI_API_KEY` | Yes | OpenAI API key |
@@ -648,7 +650,7 @@ The platform uses **Meteora Dynamic Bonding Curve SDK** to create liquidity pool
 
 ### Token Creation Flow
 
-1. **Generate keypairs**: Config + Base Mint (with optional vanity suffix)
+1. **Generate keypairs**: Config + Base Mint (with optional Viainti suffix)
 2. **Build curve config**: Bonding curve configuration
 3. **Create config**: Transaction on Solana with `client.partner.createConfig`
 4. **Create pool**: Transaction with `client.pool.createPool` or `createPoolWithFirstBuy`
