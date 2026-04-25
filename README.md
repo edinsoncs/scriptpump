@@ -1,494 +1,926 @@
-# ScriptPump
+# ScriptPump.fun - Solana Token Launchpad
 
-> The Open Source Platform for Fair Token Launches on Solana
-> 
-> **Website**: [scriptpump.fun](https://scriptpump.fun)
+> **Created by:** [viainti](https://github.com/viainthi) & [edinsoncs](https://github.com/edinsoncs)
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
-[![Solana](https://img.shields.io/badge/Network-Solana-9945FF?logo=solana)](https://solana.com/)
-[![License](https://img.shields.io/badge/License-Open%20Source-b6ff00)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Deploy](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com/)
+Professional Solana token launchpad platform with dynamic bonding curves (Meteora DBC), rewards system, AI-powered whitepaper generator, social authentication, complete admin dashboard, and integrated social feed.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Business Model](#business-model)
-- [Features](#features)
-  - [For Users](#for-users)
-  - [For Creators](#for-creators)
-  - [Admin Dashboard](#admin-dashboard)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Environment Variables](#environment-variables)
-- [Development](#development)
-- [Build & Deploy](#build--deploy)
-- [Integrations](#integrations)
-- [Contributing](#contributing)
-- [Security](#security)
-- [API Reference](#api-reference)
-- [Smart Contract Architecture](#smart-contract-architecture)
-- [Performance](#performance)
-- [Roadmap](#roadmap)
-- [License](#license)
-
----
-
-## Overview
-
-**ScriptPump** ([scriptpump.fun](https://scriptpump.fun)) is a developer-first, open-source toolkit that makes launching tokens on Solana simple, fair, and transparent. No presale. No team allocation. No AI models required. Just one click to deploy your own launchpad.
-
-Built for the Solana ecosystem, ScriptPump empowers anyone to create, manage, and profit from their own token platform — with full control over fees, branding, and revenue.
-
-### Core Philosophy
-
-1. **Fair Launch**: Every token starts equal. No presale, no insider allocation, no hidden mechanics.
-2. **Open Source**: Full transparency. Anyone can audit, fork, or contribute.
-3. **Zero Dependency**: No LLMs, no external AI models, no complex infrastructure required.
-4. **Community Ownership**: Platform owners control their fees, their branding, their destiny.
-
-> *"The future is open source + AI. Create what you feel in your heart and make it better."*  
-> — **Edinson Carranza**, CEO & Founder
+1. [Business Model](#business-model)
+2. [Key Features](#key-features)
+3. [Technical Architecture](#technical-architecture)
+4. [Project Structure](#project-structure)
+5. [Installation & Configuration](#installation--configuration)
+6. [API Endpoints](#api-endpoints)
+7. [Environment Variables](#environment-variables)
+8. [Database - Firebase](#database---firebase)
+9. [Bonding Curve System](#bonding-curve-system)
+10. [Rewards System](#rewards-system)
+11. [Whitepaper Generator](#whitepaper-generator)
+12. [Installer - Setup Wizard](#installer---setup-wizard)
+13. [Authentication](#authentication)
+14. [Internationalization (i18n)](#internationalization-i18n)
+15. [Deployment](#deployment)
+16. [Tech Stack](#tech-stack)
 
 ---
 
 ## Business Model
 
-### Revenue Streams
+ScriptPump.fun is a **pump.fun-style token launchpad** operating on the **Solana** network using the **Meteora Dynamic Bonding Curve (DBC) SDK**. The business model is built on multiple revenue streams:
 
-| Stream | Description |
-|--------|-------------|
-| **Platform Fees** | Configurable fee percentage on every token launch. Set by the admin. |
-| **Transaction Fees** | Small percentage collected on each token trade within the launchpad. |
-| **Premium Features** | Optional paid upgrades for advanced analytics, custom branding, and priority support. |
+### 1. Token Launch Fees
+- Each launched token generates a configurable commission (`feePercent` 1-5%)
+- The fee is distributed between the **creator** (50% default) and the **host/partner** (50% default)
+- Fees accumulate in the pool and can be claimed at any time
 
-### Key Advantages
+### 2. Pool Creation Fee
+- Fixed fee in lamports for each pool created (`poolCreationFee`)
+- Configurable by the host administrator
 
-- **No Lock-in**: Open source. Deploy anywhere. Own your infrastructure.
-- **Full Fee Control**: Admin sets all rates. No hidden charges from third parties.
-- **Community-Driven**: Revenue grows with the community. More launches = more earnings.
-- **Self-Sustaining**: Platform funds its own development through collected fees.
+### 3. Migration to Meteora DAMM v2
+- When reaching the migration threshold (`migrationQuoteThreshold` default: 50 SOL), liquidity automatically migrates to Meteora DAMM v2
+- A percentage of supply (`percentageSupplyOnMigration` default: 10%) is reserved for migration
+- Configurable migration fee (`migrationFeeOption: FixedBps25`)
 
-### Competitive Edge
+### 4. Host Rewards (Partner Fees)
+- The host/administrator receives partner fees on every pool transaction
+- Partner fees accumulate and can be claimed from the admin dashboard
+- Host wallet configurable via `METEORA_HOST_SECRET_BASE64` and `METEORA_HOST_RECEIVER`
 
-| Feature | ScriptPump | Pump.fun | Bags.fm | Printr.money | LetsBonk |
-|---------|:----------:|:--------:|:-------:|:------------:|:--------:|
-| Custom Branding | Unlimited | No | No | No | No |
-| Own Domain | Included | No | No | No | No |
-| Fee Control | Full Control | No | Partial | No | No |
-| Database Integrations | Unlimited | No | No | No | No |
-| Email Workflows | Built-in | No | No | No | No |
-| Revenue Dashboard | Real-time | Basic | No | Basic | No |
-| Multi-currency Rewards | Auto-sync | No | No | No | No |
-| Pool Management | Full Control | No | No | No | No |
-| Open Source | Yes | No | No | No | No |
-| Admin Panel | Complete | No | No | No | No |
+### 5. Vanity Token Address (Premium)
+- Generation of token addresses with custom suffix (e.g., `...tkl`)
+- Configurable via `TOKEN_ADDRESS_SUFFIX` and `TOKEN_ADDRESS_MAX_ATTEMPTS`
+- Premium functionality for projects wanting branding on their contract address
+
+### 6. Additional Services
+- **AI Whitepaper Generator**: Automatic generation of professional whitepapers using OpenAI GPT-4o-mini
+- **Social Feed**: Creators can publish updates about their tokens
+- **Website Builder**: Tool for creating token landing pages
+- **Staking**: Integrated staking system (component ready)
+
+### Revenue Flow
+
+```
+User creates token → Pays fee (1-5%) → 50% creator / 50% host
+       ↓
+Active pool on bonding curve → Each swap generates fees
+       ↓
+Threshold reached (50 SOL) → Migration to Meteora DAMM v2
+       ↓
+Host claims rewards periodically → Recurring revenue
+```
 
 ---
 
-## Features
+## Key Features
 
 ### For Users
+- **Token creation in minutes**: No code, intuitive interface
+- **Built-in wallet**: Solana wallet generation and management from the browser
+- **Optional Initial Buy**: Automatic token purchase at launch time
+- **Social links**: Up to 12 configurable social networks per token
+- **Image upload**: Logo and cover with IPFS storage (Pinata)
+- **Whitepaper generator**: AI-powered generation in 8 languages
+- **Social feed**: Post updates and promote tokens
+- **Profile with rewards**: View and claim rewards from all created tokens
+- **Multi-wallet**: Support for multiple stored wallets
 
-- **Create Tokens** — Deploy fair launch tokens on Solana in seconds. No presale, no team allocation.
-- **View Profile** — Track your launches, holdings, and activity in one clean dashboard.
-- **Followers** — Build your audience. Get notified when creators launch new tokens.
-- **Charts** — Real-time price charts with volume, liquidity, and market data.
-- **Bond Token** — Bonding curve mechanics for fair price discovery from launch.
-- **Frontend Ready** — Beautiful, responsive UI out of the box. Dark and light themes included.
+### For Administrators (Host)
+- **Complete admin dashboard**: Overview, services, rewards, pools, bonds, templates, addons
+- **Installer wizard**: 3-step guided setup to configure the platform
+- **Mass rewards claiming**: Claim all partner fees from all pools
+- **Real-time metrics**: Tokens launched, total liquidity, active users
+- **Bonding curve configuration**: Customizable parameters per configuration
+- **Service management**: Firebase/Supabase/MongoDB, email, RPC
 
-### For Creators
-
-- **Earn from Every Launch** — Collect fees from your community. You control the rates.
-- **Revenue Analytics** — Track all fees collected in real-time. See total revenue, daily earnings, and payout history.
-- **Multi-Currency Wallet** — Claim earnings in different currencies created by your community.
-- **Instant Withdrawals** — Secure, fast withdrawal of earned rewards.
-
-### Admin Dashboard
-
-| Module | Description |
-|--------|-------------|
-| **Overview** | Complete platform analytics. Real-time metrics, user activity, and revenue summary. |
-| **Services** | Connect with Firebase, Supabase, MongoDB, or any database. Built-in email workflows, Solana RPC configuration, and cloud storage. |
-| **Rewards** | Multi-currency reward claiming, revenue dashboards, and payout management. |
-| **Pools** | Verify, update, delete, or block any liquidity pool. Advanced filtering, batch operations, and audit logs. |
+### Technical
+- **Vanity addresses**: Generation of contract addresses with custom suffix
+- **Email verification**: Mandatory verification for email/password auth
+- **Social auth**: Twitter, Google, Telegram
+- **i18n**: Multi-language support (EN, ES, PT, FR, DE, ZH, JA, KO)
+- **Responsive**: Mobile-first, works on all devices
+- **Dark theme**: Professional design with dark theme and green accents (#A3FF12)
 
 ---
 
-## Tech Stack
+## Technical Architecture
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS |
-| **Font** | Geist, Geist Mono |
-| **Backend** | Serverless functions, API Routes |
-| **Database** | Supabase / Firebase / MongoDB (configurable) |
-| **Blockchain** | Solana, Helius RPC |
-| **Email** | Resend |
-| **Hosting** | AWS / Vercel |
-| **Package Manager** | npm |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (Next.js)                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │
+│  │ Home     │  │ Create   │  │ Token    │  │ Admin Dashboard  │ │
+│  │ Dashboard│  │ Token    │  │ Detail   │  │ (Overview, Pools,│ │
+│  │          │  │ Wizard   │  │ Page     │  │  Rewards, Bonds) │ │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────────┘ │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │
+│  │ Feed     │  │ Profile  │  │ White-   │  │ Installer Wizard │ │
+│  │ Social   │  │ & Rewards│  │ paper    │  │ (3-step setup)   │ │
+│  │          │  │          │  │ Builder  │  │                  │ │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                    API Routes (Next.js)
+                              │
+┌──────────────┬──────────────┼──────────────┬─────────────────────┐
+│              │              │              │                     │
+▼              ▼              ▼              ▼                     ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
+│ Solana   │ │ Meteora  │ │ Firebase │ │ OpenAI   │ │ Pinata IPFS  │
+│ Network  │ │ DBC SDK  │ │ (Auth,   │ │ (GPT-4o  │ │ (Metadata    │
+│ (RPC)    │ │ (Pools,  │ │  DB,     │ │  -mini)  │ │  Storage)    │
+│          │ │  Curves) │ │ Storage) │ │          │ │              │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────────┘
+```
 
 ---
 
 ## Project Structure
 
 ```
-scriptpump/
+tokenfun/
 ├── app/
-│   ├── layout.tsx          # Root layout with fonts & metadata
-│   ├── page.tsx            # Main landing page (all sections)
-│   ├── globals.css         # Global styles & animations
-│   └── favicon.ico
-├── public/
-│   ├── bg1.png             # Dark theme screenshot
-│   ├── bg2.png             # Light theme screenshot
-│   ├── screen1.png         # Admin — Overview
-│   ├── screen2.png         # Admin — Services
-│   ├── screen3.png         # Admin — Rewards
-│   ├── screen4.png         # Admin — Pools
-│   ├── ava.png             # Team avatar photo
-│   ├── scriptpump-wizard-cat.png  # Hero mascot
-│   └── 1png.png – 6png.png       # Feature cards
-├── .next/                  # Build output
+│   ├── page.tsx                    # Home - Main dashboard with tokens, stats, rewards
+│   ├── layout.tsx                  # Root layout with providers (theme, i18n, auth)
+│   ├── globals.css                 # Global styles + Tailwind
+│   │
+│   ├── create/
+│   │   └── page.tsx                # Token creation page (full wizard)
+│   │
+│   ├── token/[address]/
+│   │   ├── page.tsx                # Token detail page (SSR)
+│   │   └── token-details-client.tsx # Interactive detail client
+│   │
+│   ├── feed/
+│   │   ├── page.tsx                # Main social feed
+│   │   └── post/[id]/page.tsx      # Individual post detail
+│   │
+│   ├── profile/
+│   │   ├── page.tsx                # User profile + rewards
+│   │   └── [handle]/page.tsx       # Public profile by handle
+│   │
+│   ├── host-dashboard/
+│   │   └── page.tsx                # Host dashboard (global rewards)
+│   │
+│   ├── settings/
+│   │   └── page.tsx                # User settings
+│   │
+│   ├── white-paper/
+│   │   └── page.tsx                # AI whitepaper generator
+│   │
+│   ├── build/
+│   │   ├── page.tsx                # Builder hub
+│   │   ├── website/page.tsx        # Website builder
+│   │   └── whitepaper/page.tsx     # Whitepaper builder
+│   │
+│   ├── installer/
+│   │   └── page.tsx                # Installation wizard (3 steps)
+│   │
+│   ├── admin/
+│   │   ├── page.tsx                # Admin dashboard overview
+│   │   ├── services/page.tsx       # Service management
+│   │   ├── rewards/page.tsx        # Host rewards
+│   │   ├── pools/page.tsx          # Pool management
+│   │   ├── bonds/page.tsx          # Bonding curve configuration
+│   │   ├── templates/page.tsx      # Templates
+│   │   └── addons/page.tsx         # Addons (feed, staking, etc)
+│   │
+│   └── api/
+│       ├── launch-token/
+│       │   └── route.ts            # MAIN ENDPOINT: launch, claim, rewards, admin
+│       ├── create/
+│       │   └── route.ts            # Proxy for launch-token (public action)
+│       ├── tokens/
+│       │   └── route.ts            # List all created tokens
+│       ├── token/ca/[address]/
+│       │   └── route.ts            # Token info + rewards by CA
+│       ├── token-metadata/
+│       │   └── route.ts            # Upload metadata to IPFS (Pinata)
+│       ├── pool-mcap/
+│       │   └── route.ts            # Pool market cap
+│       ├── generate-whitepaper/
+│       │   └── route.ts            # Generate whitepaper with OpenAI
+│       ├── generate-whitepaper-pdf/
+│       │   └── route.ts            # Generate whitepaper PDF
+│       ├── generate-content/
+│       │   └── route.ts            # Generate content with AI
+│       ├── stream/
+│       │   └── route.ts            # WebSocket stream
+│       ├── installer/env/
+│       │   └── route.ts            # Generate .env.local from installer
+│       ├── creator/[handle]/
+│       │   ├── route.ts            # Creator info by handle
+│       │   └── follow/route.ts     # Follow/unfollow creator
+│       └── auth/
+│           ├── twitter/
+│           │   ├── route.ts        # Init Twitter OAuth
+│           │   └── callback/route.ts # Twitter OAuth callback
+│           ├── twitter/username/route.ts  # Get Twitter username
+│           ├── telegram/route.ts   # Telegram WebApp auth
+│           ├── verify-email/route.ts # Email verification
+│           └── reset-password/route.ts   # Password reset
+│
+├── components/
+│   ├── app-shell.tsx               # Main shell with sidebar
+│   ├── main-header.tsx             # Header with rewards badge
+│   ├── sidebar.tsx                 # Navigation sidebar
+│   ├── premium-sidebar.tsx         # Premium sidebar
+│   ├── mobile-nav.tsx              # Mobile navigation
+│   ├── theme-provider.tsx          # Theme provider
+│   ├── theme-toggle.tsx            # Dark/light toggle
+│   ├── settings-modal.tsx          # Settings modal
+│   ├── settings-modal-context.tsx  # Modal context
+│   ├── profile-card.tsx            # Profile card
+│   ├── live-stream.tsx             # Live stream component
+│   ├── rewards-success-modal.tsx   # Rewards success modal
+│   ├── claim-error-modal.tsx       # Claim error modal
+│   │
+│   ├── auth/
+│   │   ├── twitter-auth-provider.tsx # Twitter auth provider
+│   │   ├── email-verification-alert.tsx # Email verification alert
+│   │   └── profile-menu.tsx        # Profile menu
+│   │
+│   ├── i18n/
+│   │   ├── language-provider.tsx   # Language provider
+│   │   └── language-switcher.tsx   # Language selector
+│   │
+│   ├── builder/                    # Website builder components
+│   │   ├── builder-toolbar.tsx
+│   │   ├── context-menu.tsx
+│   │   ├── editable-button.tsx
+│   │   ├── editable-icon.tsx
+│   │   ├── editable-image.tsx
+│   │   ├── editable-logo.tsx
+│   │   ├── editable-nav-item.tsx
+│   │   ├── editable-text.tsx
+│   │   ├── editable-wallet-button.tsx
+│   │   ├── editor-panel.tsx
+│   │   ├── onboarding-screen.tsx
+│   │   └── text-card.tsx
+│   │
+│   ├── landing/                    # Landing page components
+│   │   ├── about-section.tsx
+│   │   ├── blog-section.tsx
+│   │   ├── footer-section.tsx
+│   │   ├── header.tsx
+│   │   ├── hero-section.tsx
+│   │   ├── how-to-buy-section.tsx
+│   │   ├── marquee-section.tsx
+│   │   ├── roadmap-section.tsx
+│   │   └── tokenomics-section.tsx
+│   │
+│   ├── staking/
+│   │   └── staking-panel.tsx       # Staking panel
+│   │
+│   └── whitepaper/
+│       ├── format-card.tsx         # Format card
+│       ├── module-selector.tsx     # Module selector
+│       ├── template-card.tsx       # Template card
+│       └── wp-language-selector.tsx # Language selector
+│
+├── hooks/
+│   └── use-wallet.ts               # Solana wallet management hook
+│
+├── lib/
+│   ├── firebase.ts                 # Firebase client config
+│   ├── firebase-admin.ts           # Firebase Admin SDK
+│   ├── installer.ts                # Installer logic
+│   ├── i18n.ts                     # Translations and i18n utilities
+│   ├── templates.ts                # Content templates
+│   ├── avatar.ts                   # Avatar generation
+│   └── utils.ts                    # General utilities (cn, etc)
+│
+├── types/
+│   └── html2pdf.d.ts               # Types for html2pdf.js
+│
+├── public/                         # Static assets
+├── styles/                         # Additional styles
+│
+├── .env.local                      # Environment variables (generated by installer)
+├── .gitignore
+├── next.config.mjs                 # Next.js config
 ├── package.json
 ├── tsconfig.json
-├── next.config.ts
-├── tailwind.config.ts
 ├── postcss.config.mjs
-└── README.md
+└── components.json                 # shadcn/ui config
 ```
 
 ---
 
-## Installation
+## Installation & Configuration
 
 ### Prerequisites
 
-- **Node.js** >= 18.18.0
-- **npm** >= 9.0.0 (or yarn/pnpm/bun)
-- **Git**
+- **Node.js** 22+ (recommended)
+- **npm** or **pnpm** as package manager
+- **Firebase** account (for auth, DB, storage)
+- **Helius** account or Solana RPC provider
+- **Pinata** account (for IPFS)
+- **OpenAI** account (for whitepaper generation)
+- **Resend** account or other email provider
+- Solana wallet with SOL for transaction fees (host wallet)
 
-### Quick Start
+### Step 1: Clone the repository
 
 ```bash
-# Clone the repository
-git clone https://github.com/edinsoncs/ScriptPump.git
-cd ScriptPump
+git clone <repo-url>
+cd tokenfun
+```
 
-# Install dependencies
+### Step 2: Install dependencies
+
+```bash
 npm install
+# or with pnpm
+pnpm install
+```
 
-# Set up environment variables
-cp .env.example .env.local
+### Step 3: Initial configuration (Installer Wizard)
 
-# Start development server
+The platform includes an **Installer Wizard** that guides configuration in 3 steps:
+
+1. Navigate to `http://localhost:3000/installer`
+2. **Step 1**: Configure launcher name, language, admin email/password
+3. **Step 2**: Configure database (Firebase/Supabase/MongoDB), email provider, RPC
+4. **Step 3**: Review and generate installation
+
+The installer automatically generates the `.env.local` file and saves configuration to `localStorage`.
+
+### Step 4: Manual environment variable configuration
+
+If you prefer manual configuration, edit `.env.local`:
+
+```bash
+# Database (Firebase)
+INSTALLER_DATABASE_PROVIDER="firebase"
+NEXT_PUBLIC_FIREBASE_API_KEY="your-api-key"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-project.firebasestorage.app"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
+NEXT_PUBLIC_FIREBASE_APP_ID="your-app-id"
+FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account",...}'
+
+# Email
+EMAIL_PROVIDER="resend"
+EMAIL_API_KEY="re_your-api-key"
+EMAIL_FROM_EMAIL="info@yourdomain.com"
+
+# Solana RPC
+NEXT_PUBLIC_RPC_PROVIDER="helius"
+NEXT_PUBLIC_RPC_URL="https://mainnet.helius-rpc.com/?api-key=your-api-key"
+
+# Meteora Host (for admin rewards)
+METEORA_HOST_SECRET_BASE64="base64-secret-key-of-your-host-wallet"
+METEORA_HOST_RECEIVER="wallet-address-to-receive-rewards"
+HOST_DASHBOARD_SECRET="secret-to-protect-admin-dashboard"
+
+# Token Vanity Address
+TOKEN_ADDRESS_SUFFIX="tkl"
+TOKEN_ADDRESS_MAX_ATTEMPTS="250000"
+TOKEN_ADDRESS_SUFFIX_REQUIRED="true"
+
+# IPFS (Pinata)
+PINATA_JWT="your-pinata-jwt"
+PINATA_GATEWAY_BASE="https://gateway.pinata.cloud/ipfs/"
+
+# OpenAI (for whitepapers)
+OPENAI_API_KEY="sk-your-api-key"
+```
+
+### Step 5: Run in development
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+The application will be available at `http://localhost:3000`
 
----
-
-## Environment Variables
-
-Create a `.env.local` file in the project root:
-
-```env
-# Solana / Helius RPC
-NEXT_PUBLIC_HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
-
-# Database (choose one)
-DATABASE_URL=postgresql://user:password@host:5432/scriptpump   # Supabase/PostgreSQL
-FIREBASE_API_KEY=your_firebase_api_key
-MONGODB_URI=mongodb://localhost:27017/scriptpump
-
-# Email (Resend)
-RESEND_API_KEY=re_XXXXXXXXXXXXXXXXXXXX
-
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_SOLANA_NETWORK=mainnet-beta
-```
-
----
-
-## Development
-
-### Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with Turbopack |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run type-check` | Run TypeScript type checking |
-
-### Code Style
-
-- **TypeScript** strict mode enabled
-- **ESLint** with Next.js recommended rules
-- **Prettier** for consistent formatting
-- **Tailwind CSS** for utility-first styling
-
-### Component Architecture
-
-All components are defined inline within `app/page.tsx` as a single-page landing. Each section is a self-contained `<section>` element with:
-
-- `FeatureCard` — Image-based feature cards with hover effects
-- `AdminArticle` — Admin feature descriptions with icons
-- `BenchmarkRowFull` — Comparison table rows
-- `ArticleCard` — Reference/article link cards
-- `TechLogo` — Technology stack carousel items
-
----
-
-## Build & Deploy
-
-### Production Build
+### Step 6: Build for production
 
 ```bash
 npm run build
 npm run start
 ```
 
-### Deploy on Vercel
+---
 
-```bash
-vercel deploy --prod
+## API Endpoints
+
+### POST /api/launch-token
+
+**Main endpoint** - Handles multiple actions related to tokens and rewards.
+
+#### Available actions:
+
+| Action | Description | Authentication |
+|--------|-------------|----------------|
+| `create-wallet` | Generates new Solana wallet | Public |
+| `check-balance` | Checks wallet balance | Public |
+| `launch-token` | Creates token + pool on Solana | Requires auth + verified email |
+| `get-rewards` | Gets pending rewards for a user | Requires ownerUid |
+| `claim-rewards` | Claims rewards from all user's pools | Requires secretKey + ownerUid |
+| `host-dashboard` | Gets stats for all pools | Requires x-admin-key header |
+| `claim-host-rewards` | Claims partner fees from all pools | Requires x-admin-key header |
+| `admin-all-rewards` | Global rewards view + earnings chart | Requires x-admin-key header |
+
+#### Example: Launch token
+
+```json
+POST /api/launch-token
+{
+  "action": "launch-token",
+  "secretKey": "base64-secret-key",
+  "tokenConfig": {
+    "tokenName": "My Token",
+    "tokenSymbol": "MTK",
+    "tokenUri": "https://.../metadata.json",
+    "description": "Project description",
+    "website": "https://mywebsite.com",
+    "twitter": "@mytoken",
+    "telegram": "https://t.me/mytoken",
+    "image": "https://.../logo.png",
+    "coverImage": "https://.../cover.png",
+    "initialBuy": 0.5,
+    "feePercent": 1,
+    "decimals": 9,
+    "totalSupply": 1000000000,
+    "migrationThreshold": 50,
+    "percentageSupplyOnMigration": 10,
+    "creatorTradingFeePercent": 50,
+    "creatorPermanentLockedPercent": 100,
+    "partnerLiquidityPercent": 0,
+    "partnerPermanentLockedPercent": 0,
+    "poolCreationFee": 0
+  },
+  "user": {
+    "uid": "user_123",
+    "handle": "@myuser",
+    "avatar": "https://.../avatar.png",
+    "provider": "twitter"
+  },
+  "idToken": "firebase-id-token"
+}
 ```
 
-### Deploy on AWS
+#### Successful response:
 
-1. Build the project: `npm run build`
-2. Upload the `.next` standalone folder to your AWS EC2/ECS
-3. Configure nginx or ALB for routing
-4. Set environment variables in AWS Secrets Manager
+```json
+{
+  "success": true,
+  "data": {
+    "tokenAddress": "ABC123...tkl",
+    "poolAddress": "DEF456...",
+    "configAddress": "GHI789...",
+    "signature": "tx-signature",
+    "configSignature": "config-tx-signature",
+    "tokenName": "My Token",
+    "tokenSymbol": "MTK",
+    "totalSupply": 1000000000,
+    "decimals": 9,
+    "bondingCurve": {
+      "migrationQuoteThreshold": 50,
+      "percentageSupplyOnMigration": 10,
+      "migratesTo": "Meteora DAMM v2"
+    }
+  }
+}
+```
 
-### Custom Domain
+### POST /api/create
 
-ScriptPump supports custom domains. Configure in your hosting provider's dashboard and update `NEXT_PUBLIC_APP_URL`.
+Public endpoint for creating tokens (proxy to launch-token with predefined action).
 
----
+### GET /api/tokens?search=<query>
 
-## Integrations
+Lists all created tokens, descending order by date. Optional search.
 
-### Solana & Helius RPC
+### GET /api/token/ca/<address>
 
-Connect to Solana mainnet/devnet via Helius for fast, reliable RPC calls. Used for token deployment, transaction monitoring, and wallet interactions.
+Gets token information and rewards breakdown by contract address or pool address.
 
-### Database
+### POST /api/token-metadata
 
-Plug-and-play support for:
+Uploads token metadata to IPFS via Pinata. Accepts `FormData` with name, symbol, description, logo, and cover.
 
-- **Supabase** (PostgreSQL) — Recommended for production
-- **Firebase** — Real-time data and authentication
-- **MongoDB** — Flexible document store
+### POST /api/generate-whitepaper
 
-### Email (Resend)
+Generates whitepaper with OpenAI GPT-4o-mini.
 
-Built-in email workflows for:
+```json
+{
+  "tokenName": "My Token",
+  "ticker": "MTK",
+  "description": "Project description",
+  "blockchain": "Solana",
+  "totalSupply": "1000000000",
+  "format": "document",
+  "modules": 9,
+  "language": "en"
+}
+```
 
-- Token launch confirmations
-- Revenue payout notifications
-- User onboarding and verification
+Supported formats: `document`, `presentation`, `social`
+Supported languages: `en`, `es`, `pt`, `fr`, `de`, `zh`, `ja`, `ko`
 
----
+### POST /api/installer/env
 
-## Benchmark
-
-See the [comparison table](#competitive-edge) above for a full feature comparison against competing platforms.
-
----
-
-## Contributing
-
-ScriptPump is open source and welcomes contributions from the community.
-
-### How to Contribute
-
-1. **Fork** the repository
-2. **Create** a feature branch: `git checkout -b feat/your-feature`
-3. **Commit** your changes: `git commit -m 'feat: add new feature'`
-4. **Push** to the branch: `git push origin feat/your-feature`
-5. **Open** a Pull Request at [github.com/edinsoncs/ScriptPump](https://github.com/edinsoncs/ScriptPump)
-
-### Reporting Issues
-
-Report bugs, request features, or contribute code via [GitHub Issues](https://github.com/edinsoncs/ScriptPump/issues).
-
-### Guidelines
-
-- Follow the existing code style
-- Write clear commit messages
-- Test your changes before submitting
-- Keep PRs focused and scoped
+Generates/updates the environment variable block in `.env.local` from the installer wizard.
 
 ---
 
-## Team
+## Environment Variables
 
-### Edinson Carranza — CEO & Founder
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `INSTALLER_DATABASE_PROVIDER` | Yes | Provider: `firebase`, `supabase`, `mongodb` |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes* | Firebase API Key |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes* | Firebase Auth Domain |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes* | Firebase Project ID |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes* | Firebase Storage Bucket |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Yes* | Firebase Messaging Sender ID |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes* | Firebase App ID |
+| `FIREBASE_SERVICE_ACCOUNT_KEY` | Yes* | Firebase Service Account JSON (Admin SDK) |
+| `EMAIL_PROVIDER` | Yes | `resend`, `sendgrid`, `ses`, `mailgun`, `postmark` |
+| `EMAIL_API_KEY` | Yes | Email provider API key |
+| `EMAIL_FROM_EMAIL` | Yes | Sender email |
+| `NEXT_PUBLIC_RPC_PROVIDER` | Yes | `helius`, `quicknode`, `alchemy`, `custom` |
+| `NEXT_PUBLIC_RPC_URL` | Yes | Solana RPC URL |
+| `METEORA_HOST_SECRET_BASE64` | Yes | Host wallet base64 secret key |
+| `METEORA_HOST_RECEIVER` | No | Destination wallet for host rewards |
+| `HOST_DASHBOARD_SECRET` | Yes | Secret to protect admin dashboard |
+| `TOKEN_ADDRESS_SUFFIX` | No | Vanity suffix for token addresses |
+| `TOKEN_ADDRESS_MAX_ATTEMPTS` | No | Max attempts for vanity address (default: 250000) |
+| `TOKEN_ADDRESS_SUFFIX_REQUIRED` | No | If `true`, fails if vanity not found |
+| `PINATA_JWT` | Yes | Pinata JWT for IPFS |
+| `PINATA_GATEWAY_BASE` | No | Custom IPFS gateway |
+| `OPENAI_API_KEY` | Yes | OpenAI API key |
 
-One of the earliest developers of the Shiba Inu ecosystem — creator of the original **shibatoken.com**, contributor to **ShibaSwap** and the **Ethereum Foundation Ecosystem** (2021). Registered company director in the UK since 2020.
+*Required if `INSTALLER_DATABASE_PROVIDER=firebase`
 
-Now building **ScriptPump** — bringing open source tools to the Solana ecosystem so anyone can launch, manage, and profit from their own token platform.
+---
 
-- GitHub: [@edinsoncs](https://github.com/edinsoncs)
-- X/Twitter: [@scriptpumpsol](https://x.com/scriptpumpsol)
+## Database - Firebase
+
+### Collections
+
+#### `tokensList`
+Stores all launched tokens.
+
+```typescript
+{
+  name: string
+  symbol: string
+  tokenAddress: string
+  poolAddress: string
+  configAddress: string
+  signature: string
+  configSignature: string
+  ownerUid: string
+  ownerHandle: string
+  ownerAvatar: string
+  description: string
+  website: string
+  twitter: string
+  telegram: string
+  discord: string
+  image: string
+  coverImage: string
+  initialBuy: number
+  feePercent: number
+  totalSupply: number
+  creatorWallet: string
+  creatorSecret: string  // base64 of secret key
+  migrationQuoteThreshold: number
+  percentageSupplyOnMigration: number
+  creatorTradingFeePercentage: number
+  creatorPermanentLockedLiquidityPercentage: number
+  partnerLiquidityPercentage: number
+  partnerPermanentLockedLiquidityPercentage: number
+  poolCreationFee: number
+  hostWallet: string
+  usedConfigName: string
+  createdAt: serverTimestamp()
+}
+```
+
+#### `feedPosts`
+Social feed posts.
+
+```typescript
+{
+  posterHandle: string
+  posterAvatar: string
+  ownerHandle: string
+  text: string
+  imageUrl: string
+  tokenName: string
+  tokenSymbol: string
+  tokenAddress: string
+  tokenImage: string
+  createdAt: Timestamp
+}
+```
+
+---
+
+## Bonding Curve System
+
+The platform uses **Meteora Dynamic Bonding Curve SDK** to create liquidity pools with dynamic bonding curves.
+
+### Configurable Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `migrationQuoteThreshold` | 50 SOL | Threshold to migrate to DAMM v2 |
+| `percentageSupplyOnMigration` | 10% | Supply reserved for migration |
+| `creatorTradingFeePercent` | 50% | % of fees going to creator |
+| `creatorPermanentLockedPercent` | 100% | % of creator liquidity permanently locked |
+| `partnerLiquidityPercent` | 0% | % of liquidity for partner |
+| `partnerPermanentLockedPercent` | 0% | % permanently locked for partner |
+| `poolCreationFee` | 0 lamports | Fixed fee per pool creation |
+| `feePercent` | 1-5% | Dynamic fee per transaction |
+| `tokenDecimals` | 6-9 | Token decimals |
+| `totalSupply` | 1B | Total supply (100K - 1B) |
+
+### Token Creation Flow
+
+1. **Generate keypairs**: Config + Base Mint (with optional vanity suffix)
+2. **Build curve config**: Bonding curve configuration
+3. **Create config**: Transaction on Solana with `client.partner.createConfig`
+4. **Create pool**: Transaction with `client.pool.createPool` or `createPoolWithFirstBuy`
+5. **Initial buy** (optional): Automatic purchase in the same sequence
+6. **Save to DB**: Persist metadata to Firebase `tokensList`
+
+### Automatic Migration
+
+When the pool reaches `migrationQuoteThreshold` (default 50 SOL):
+- Liquidity automatically migrates to **Meteora DAMM v2**
+- `percentageSupplyOnMigration` (default 10%) of supply is reserved
+- Migration fee: `FixedBps25` (0.25%)
+
+---
+
+## Rewards System
+
+### Creator Rewards
+
+Token creators receive a percentage of fees generated by transactions in their pool:
+
+- **Creator Trading Fee**: Configurable percentage (default 50%) of trading fees
+- Accumulates in the pool and can be claimed at any time
+- Requires `creatorSecret` (stored in Firebase when creating the token)
+
+### Host/Partner Rewards
+
+The host/administrator receives partner fees from all pools:
+
+- **Partner Trading Fee**: Configurable percentage of trading fees
+- Accumulable from all platform pools
+- Claimable from admin dashboard or via API
+
+### Claim Flow
+
+1. Authenticated user clicks "Claim Rewards"
+2. Backend searches all user's pools (by `ownerUid` and `creatorWallet`)
+3. For each pool, gets fee breakdown via Meteora SDK
+4. If pending fees exist, signs and sends claim transaction
+5. Host also claims their partner fees automatically
+6. Result: confirmed transactions + claimed amounts
+
+### Multi-Wallet Support
+
+The system supports multiple wallets stored in `localStorage`:
+- `tokenlab_wallet_*`
+- `tokenlab_imported_*`
+- `tokenlab-wallet`
+
+When claiming, pools are searched across all stored wallets and the correct keypair is used for each claim.
+
+---
+
+## Whitepaper Generator
+
+Professional whitepaper generation system using **OpenAI GPT-4o-mini**.
+
+### Features
+
+- **8 languages**: English, Spanish, Portuguese, French, German, Chinese, Japanese, Korean
+- **3 formats**:
+  - `document`: Detailed professional document (3-4 paragraphs per section)
+  - `presentation`: Concise slides (bullet points, 4-6 per slide)
+  - `social`: Social media thread posts (tweet-length)
+- **1-10 sections**: Configurable
+- **PDF Export**: PDF generation via html2pdf.js
+
+### Typical Sections
+
+1. Executive Summary
+2. Introduction
+3. Problem Statement
+4. Solution & Technology
+5. Tokenomics
+6. Roadmap
+7. Team & Governance
+8. Security & Audits
+9. Legal Disclaimer
+
+---
+
+## Installer - Setup Wizard
+
+The installer is a 3-step wizard that configures the platform without needing to edit files manually.
+
+### Step 1: Basic Configuration
+
+- Launcher name
+- Default language (EN/ES)
+- Token mode: new or existing
+- Admin email and password
+
+### Step 2: Technical Services
+
+- **Database**: Firebase, Supabase, or MongoDB
+- **Email**: Resend, SendGrid, SES, Mailgun, Postmark
+- **RPC**: Helius, QuickNode, Alchemy, Custom
+
+### Step 3: Review and Generate
+
+- Full configuration summary
+- Automatic `.env.local` generation
+- Configuration saved to `localStorage`
+- Redirect to admin dashboard
+
+---
+
+## Authentication
+
+### Supported Methods
+
+1. **Twitter OAuth**: Full authentication with OAuth 1.0a
+2. **Google OAuth**: Via Firebase Auth
+3. **Email/Password**: Firebase Auth with mandatory verification
+4. **Telegram WebApp**: Auto-login via Telegram WebApp SDK
+
+### Email Verification
+
+For users registering with email/password, email verification is **mandatory** before launching tokens:
+
+- Verifies the `email_verified` claim in the Firebase ID Token
+- Forces token refresh to get the latest claim
+- Returns 403 error if not verified
+
+### Twitter Auth Flow
+
+1. User clicks "Connect Twitter"
+2. Redirect to `/api/auth/twitter` (init OAuth)
+3. Twitter callback → `/api/auth/twitter/callback`
+4. User authenticated with Firebase via Twitter credential
+5. Twitter username obtained via `/api/auth/twitter/username`
+
+---
+
+## Internationalization (i18n)
+
+The platform supports multiple languages with a key-based translation system.
+
+### Supported Languages
+
+| Code | Language |
+|------|----------|
+| `en` | English |
+| `es` | Spanish |
+| `pt` | Portuguese |
+| `fr` | French |
+| `de` | German |
+| `zh` | Chinese |
+| `ja` | Japanese |
+| `ko` | Korean |
+
+### Usage
+
+```typescript
+import { useI18n } from "@/components/i18n/language-provider"
+
+const { t } = useI18n()
+const title = t("create.title")
+```
+
+Translations are defined in `lib/i18n.ts`.
+
+---
+
+## Deployment
+
+### Vercel (Recommended)
+
+```bash
+vercel
+```
+
+Environment variables to configure in Vercel:
+- All listed in the Environment Variables section
+
+### Docker
+
+```dockerfile
+FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+### Production Considerations
+
+- Use paid RPC for better reliability (Helius paid plan)
+- Configure strong `HOST_DASHBOARD_SECRET`
+- Periodically rotate `METEORA_HOST_SECRET_BASE64`
+- Enable rate limiting on public endpoints
+- Monitor failed transactions
+
+---
+
+## Tech Stack
+
+### Frontend
+- **Next.js 16** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript 5** - Type safety
+- **Tailwind CSS 4** - Styling
+- **shadcn/ui** - UI components (Radix UI primitives)
+- **Lucide React** - Icons
+- **React Icons** - Social network icons
+- **Recharts** - Charts and graphs
+- **Sonner** - Toast notifications
+- **React Hook Form + Zod** - Form validation
+
+### Blockchain
+- **@solana/web3.js** - Solana interaction
+- **@solana/spl-token** - Token management
+- **@meteora-ag/dynamic-bonding-curve-sdk** - Dynamic bonding curves
+- **bn.js** - BigInt operations
+
+### Backend / Infrastructure
+- **Firebase Admin SDK** - Auth, Firestore, Storage (server)
+- **Firebase Client SDK** - Auth, Firestore, Storage (client)
+- **OpenAI** - AI content generation
+- **Pinata** - IPFS storage
+
+### Email
+- **Resend** / SendGrid / SES / Mailgun / Postmark - Transactional email
+
+### Development
+- **PostCSS** - CSS processing
+- **ESLint** - Linting
+- **Vercel Analytics** - Analytics
+
+---
+
+## Available Scripts
+
+```bash
+npm run dev       # Start development server
+npm run build     # Build for production
+npm run start     # Start production server
+npm run lint      # Run ESLint
+```
+
+---
+
+## Public API for Third Parties
+
+The following endpoints are **public** (no session required):
+
+- `POST /api/create` - Create token
+- `GET /api/tokens?search=<query>` - List tokens
+- `GET /api/token/ca/<address>` - Token info + rewards
+
+They are designed for external integration and can be consumed by other applications.
+
+---
+
+## Credits
+
+**Developed by:**
+- [viainti](https://github.com/viainthi)
+- [edinsoncs](https://github.com/edinsoncs)
+
+**Key Technologies:**
+- [Meteora](https://meteora.ag/) - Dynamic Bonding Curve SDK
+- [Solana](https://solana.com/) - Blockchain
+- [Firebase](https://firebase.google.com/) - Backend as a Service
+- [Next.js](https://nextjs.org/) - React Framework
+- [OpenAI](https://openai.com/) - AI Whitepaper Generator
 
 ---
 
 ## License
 
-Open source. Built with ♥ by the collaboration of **Viainti**.
-
-> The future is open source + AI.
-
----
-
-## Smart Contract Architecture
-
-### Token Launch Flow
-
-```
-User Wallet → ScriptPump Frontend → Solana Program → Token Mint
-                                      ↓
-                              Liquidity Pool (Bonding Curve)
-                                      ↓
-                              Revenue Split → Platform Fees → Admin Wallet
-```
-
-### Bonding Curve Mechanics
-
-ScriptPump uses a bonding curve model for initial token price discovery:
-
-- **Initial Price**: Set by creator (default: minimal SOL)
-- **Curve Type**: Exponential (configurable)
-- **Liquidity**: Auto-generated from buys
-- **Migration**: Optional Raydium AMM migration at market cap threshold
-
-### Program Accounts
-
-| Account | Purpose |
-|---------|---------|
-| `LaunchConfig` | Stores token parameters, fee rates, and creator settings |
-| `TokenVault` | Holds minted tokens and SOL liquidity |
-| `RevenueSplit` | Manages fee distribution between creator and platform |
-| `PoolRegistry` | Tracks all active pools and their states |
-
----
-
-## API Reference
-
-### REST Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/tokens` | List all launched tokens |
-| `GET` | `/api/tokens/:mint` | Get token details and metrics |
-| `POST` | `/api/tokens/create` | Deploy new token (requires wallet signature) |
-| `GET` | `/api/pools` | List all active pools |
-| `GET` | `/api/pools/:id` | Get pool details and bonding curve state |
-| `POST` | `/api/pools/:id/migrate` | Migrate pool to Raydium AMM |
-| `GET` | `/api/analytics/revenue` | Get platform revenue metrics |
-| `POST` | `/api/admin/fees` | Update platform fee configuration |
-
-### WebSocket Events
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `token:created` | `{ mint, creator, timestamp }` | New token deployed |
-| `trade:executed` | `{ token, amount, price, buyer }` | Trade executed on bonding curve |
-| `pool:migrated` | `{ pool, raydiumPool }` | Pool migrated to AMM |
-| `revenue:updated` | `{ total, daily, fees }` | Revenue metrics updated |
-
----
-
-## Security
-
-### Audits
-
-- **Smart Contract Audit**: Pending
-- **Frontend Security**: CSP headers, XSS protection, CSRF tokens
-- **Wallet Integration**: Phantom, Solflare, Backpack supported
-
-### Security Best Practices
-
-1. **Transaction Signing**: All on-chain actions require explicit wallet signature
-2. **Rate Limiting**: API endpoints protected against abuse
-3. **Input Validation**: Strict schema validation on all user inputs
-4. **Secrets Management**: Environment variables stored securely, never committed
-5. **Dependency Scanning**: Regular `npm audit` and Snyk scans
-
-### Bug Bounty
-
-Found a vulnerability? Report it via [GitHub Issues](https://github.com/edinsoncs/ScriptPump/issues) with the `security` label.
-
----
-
-## Performance
-
-### Benchmarks
-
-| Metric | Value |
-|--------|-------|
-| **Lighthouse Score** | 95+ Performance |
-| **First Contentful Paint** | < 0.8s |
-| **Time to Interactive** | < 1.5s |
-| **Bundle Size** | < 200KB (gzipped) |
-| **Image Optimization** | Next.js automatic WebP/AVIF |
-
-### Optimization Techniques
-
-- **Turbopack**: Fast HMR during development
-- **Image Optimization**: Automatic format conversion and lazy loading
-- **Font Optimization**: Geist with `font-display: swap`
-- **CSS Minification**: Tailwind purge + PostCSS
-- **Code Splitting**: Route-level and component-level splitting
-- **Edge Caching**: Static assets cached at CDN level
-
----
-
-## Roadmap
-
-### Q2 2026
-- [ ] Multi-chain support (Ethereum, Base)
-- [ ] Advanced analytics dashboard
-- [ ] Mobile app (React Native)
-- [ ] NFT integration for token creators
-
-### Q3 2026
-- [ ] DAO governance for platform parameters
-- [ ] Staking mechanism for fee reduction
-- [ ] Cross-chain bridge integration
-- [ ] SDK for third-party integrations
-
-### Q4 2026
-- [ ] AI-assisted token parameter optimization
-- [ ] Automated market maker improvements
-- [ ] Enterprise white-label solutions
-- [ ] Multi-language support
-
----
-
----
-
-## Links
-
-- **Website**: [scriptpump.fun](https://scriptpump.fun)
-- **GitHub**: [github.com/edinsoncs/ScriptPump](https://github.com/edinsoncs/ScriptPump)
-- **Issues**: [github.com/edinsoncs/ScriptPump/issues](https://github.com/edinsoncs/ScriptPump/issues)
-- **Twitter**: [@scriptpumpsol](https://x.com/scriptpumpsol)
-
----
-
-## References & History
-
-- [Original ShibaToken.com (2021)](https://web.archive.org/web/20210221162114/https://shibatoken.com/) — Wayback Machine
-- [SHIB Army (2021)](https://web.archive.org/web/20210225001720/https://shibarmy.net/) — Wayback Machine
-- [UK Company Registry (2020)](https://find-and-update.company-information.service.gov.uk/company/12844191/officers) — GOV.UK
-- [Shiba Exposed (2021)](https://shibaexposed.wordpress.com/) — WordPress
+Property of viainti & edinsoncs. All rights reserved.
